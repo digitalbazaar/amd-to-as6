@@ -123,10 +123,17 @@ function convert (source, options) {
 
     // fix indentation
     if (options.beautify) {
-        moduleCode = beautify(moduleCode);
+        const opts = {
+          indent_size: 2,
+          max_preserve_newlines: 2,
+          space_before_conditional: false,
+          wrap_line_length: 80,
+          brace_style: 'collapse, preserve-inline'
+        };
+        moduleCode = beautify(moduleCode, opts);
 
         // jsbeautify doesn't understand es6 module syntax yet
-        moduleCode = moduleCode.replace(/export[\s\S]default[\s\S]/, 'export default ');
+        // moduleCode = moduleCode.replace(/export[\s\S]default[\s\S]/, 'export default ');
     }
 
     // update the node with the new es6 code
