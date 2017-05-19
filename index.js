@@ -19,12 +19,34 @@ function convert (source, options) {
     var syncRequires = [];
     var requiresWithSideEffects = [];
     var mainCallExpression = null;
+    var componentDefinition = null;
+    var registerNode = null;
 
     var result = falafel(source, {
         parser: acorn,
         plugins: {jsx: true},
         ecmaVersion: 6
     }, function (node) {
+        if(node.type === 'Literal' && node.parent.type === 'CallExpression' &&
+          node.parent.callee.object &&
+          node.parent.callee.object.name === 'requirejs') {
+          // console.log('AAAAAAAAAa', node.parent.source());
+          node.parent.update(node.raw);
+          // console.log('BBBBBBBBBB', node.parent.parent);
+          // console.log('CCCCCCCCCC', node.parent.parent.parent);
+        }
+        if(node.type === 'ObjectExpression' &&
+          node.parent.type === 'CallExpression' &&
+          node.parent.callee.object.name === 'module') {
+          // capture source of component definition
+          componentDefinition = 'export default ' + node.source() + ';';
+        }
+        if (node.name === 'register' &&
+          node.parent.type === 'FunctionDeclaration') {
+          // record the `register` function node
+          registerNode = node.parent;
+        }
+
         if (isNamedDefine(node)) {
             throw new Error('Found a named define - this is not supported.');
         }
@@ -118,12 +140,18 @@ function convert (source, options) {
     // start with import statements
     var moduleCode = getImportStatements(dependenciesMap);
 
+    // replace register fuction
+    if(registerNode) {
+      registerNode.update(componentDefinition);
+    }
+
     // add modules code
     moduleCode += getModuleCode(moduleFunc);
 
     // fix indentation
     if (options.beautify) {
         const opts = {
+          end_with_newline: false,
           indent_size: 2,
           max_preserve_newlines: 2,
           space_before_conditional: false,
@@ -171,7 +199,8 @@ function getImportStatements (dependencies) {
 function updateReturnStatement (functionExpression) {
     functionExpression.body.body.forEach(function (node) {
         if (node.type === 'ReturnStatement') {
-            node.update(node.source().replace('return ', 'export default '));
+            // node.update(node.source().replace('return ', 'export default '));
+            node.update('');
         }
     });
 }
