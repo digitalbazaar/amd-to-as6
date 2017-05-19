@@ -1,3 +1,4 @@
+var _ = require('lodash');
 var os = require('os');
 var falafel = require('falafel');
 var acorn = require('acorn-jsx');
@@ -179,11 +180,18 @@ function getImportStatements (dependencies) {
 
     for (var key in dependencies) {
 
+        // if (!dependencies[key]) {
+        //     statements.push('import ' + key + ';');
+        // }
+        // always create import name
         if (!dependencies[key]) {
-            statements.push('import ' + key + ';');
+            statements.push('import ' +
+            _.chain(key).camelCase().upperFirst().value() +
+            ' from ' + key + ';');
         }
         else {
-            statements.push('import ' + dependencies[key] + ' from ' + key + ';');
+            statements.push('import ' + dependencies[key] +
+            ' from ' + key + ';');
         }
     }
 
