@@ -30,10 +30,8 @@ function convert (source, options) {
         if(node.type === 'Literal' && node.parent.type === 'CallExpression' &&
           node.parent.callee.object &&
           node.parent.callee.object.name === 'requirejs') {
-          // console.log('AAAAAAAAAa', node.parent.source());
+          // remove requireJs.toUrl
           node.parent.update(node.raw);
-          // console.log('BBBBBBBBBB', node.parent.parent);
-          // console.log('CCCCCCCCCC', node.parent.parent.parent);
         }
         if(node.type === 'ObjectExpression' &&
           node.parent.type === 'CallExpression' &&
