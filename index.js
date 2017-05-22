@@ -29,10 +29,10 @@ function convert (source, options) {
     let serviceRegisterNode;
     let mainRegisterModulesNode;
 
+    // update copyright
     const myCopyright = /(?:©|\(c\)|copyright\b)\s*(\d{4})(?:-(\d{4}))?/;
     const copyrightMatch = source.match(myCopyright);
     if(copyrightMatch) {
-      console.log('CCCCCCC', copyrightMatch[0]);
       const newCopyright =
         '(c) ' + copyrightMatch[1] + '-' + new Date().getFullYear();
       source = source.replace(copyrightMatch[0], newCopyright);
