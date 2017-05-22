@@ -79,6 +79,15 @@ function convert (source, options) {
           node.parent.callee.object.name === 'requirejs') {
           node.parent.update(node.raw);
         }
+        if(node.type === 'Identifier' &&
+          node.parent.type === 'CallExpression' &&
+          node.parent.callee.object &&
+          node.parent.callee.object.name === 'module') {
+          const componentName = camelCase(node.name);
+          const componentType = node.parent.source().match(/module\.(.*)\(/)[1];
+          node.parent.parent.update('module.' + componentType + '(\'br' +
+            componentName + '\', ' + componentName + ');');
+        }
 
         if (isNamedDefine(node)) {
             throw new Error('Found a named define - this is not supported.');
@@ -135,7 +144,12 @@ function convert (source, options) {
         });
 
         extend(dependenciesMap, modulePaths.reduce(function (obj, path, index) {
-            obj[path] = camelCase(importNames[index]) || null;
+            if(importNames[index] &&
+              importNames[index].match(/Directive|Component|Filter|Service/)) {
+                obj[path] = camelCase(importNames[index]);
+            } else {
+              obj[path] = importNames[index] || null;
+            }
             return obj;
         }, {}));
     }
