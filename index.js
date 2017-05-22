@@ -4,6 +4,8 @@ var falafel = require('falafel');
 var acorn = require('acorn-jsx');
 var beautify = require('js-beautify').js_beautify;
 
+let components;
+
 module.exports = convert;
 
 /**
@@ -13,21 +15,33 @@ module.exports = convert;
  * @returns {string}
  */
 function convert (source, options) {
-
+    // initialize components
+    components = [];
     options = options || {};
 
     var dependenciesMap = {};
     var syncRequires = [];
     var requiresWithSideEffects = [];
     var mainCallExpression = null;
-    var componentDefinition = null;
-    var registerNode = null;
+    let componentDefinition;
+    let registerNode;
+    let mainRegisterModulesNode;
 
     var result = falafel(source, {
         parser: acorn,
         plugins: {jsx: true},
         ecmaVersion: 6
     }, function (node) {
+        // console.log(node);
+        if(node.type === 'Identifier' && node.name === 'module' &&
+          node.parent.type === 'CallExpression' &&
+          node.parent.callee.name === 'register' &&
+          node.parent.parent.parent.parent.parent.type === 'CallExpression' &&
+          node.parent.parent.parent.parent.parent.callee.property.name
+          === 'forEach') {
+          mainRegisterModulesNode =
+            node.parent.parent.parent.parent.parent.parent;
+        }
         if(node.type === 'Literal' && node.parent.type === 'CallExpression' &&
           node.parent.callee.object &&
           node.parent.callee.object.name === 'requirejs') {
@@ -139,6 +153,24 @@ function convert (source, options) {
     // start with import statements
     var moduleCode = getImportStatements(dependenciesMap);
 
+    if(mainRegisterModulesNode) {
+      let moduleRegistration = '';
+      components.forEach(comp => {
+        const c = comp.toLowerCase();
+        let type;
+        ['component', 'directive', 'service', 'filter'].forEach(t => {
+          if(c.includes(t)) {
+            type = t;
+          }
+        });
+        if(!type) {
+          throw new Error('Unknown component type!');
+        }
+        moduleRegistration +=
+          'module.' + type + '(\'br' + comp + '\', ' + comp + ');\n';
+      });
+      mainRegisterModulesNode.update(moduleRegistration);
+    }
     // replace register fuction
     if(registerNode) {
       registerNode.update(componentDefinition);
@@ -185,9 +217,9 @@ function getImportStatements (dependencies) {
         // }
         // always create import name
         if (!dependencies[key]) {
-            statements.push('import ' +
-            _.chain(key).camelCase().upperFirst().value() +
-            ' from ' + key + ';');
+            const componentName = _.chain(key).camelCase().upperFirst().value();
+            components.push(componentName);
+            statements.push('import ' + componentName + ' from ' + key + ';');
         }
         else {
             statements.push('import ' + dependencies[key] +
