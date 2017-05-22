@@ -2,7 +2,7 @@ var _ = require('lodash');
 var os = require('os');
 var falafel = require('falafel');
 var acorn = require('acorn-jsx');
-var beautify = require('js-beautify').js_beautify;
+const beautify = require('js-beautify').js_beautify;
 
 let components;
 
@@ -28,6 +28,15 @@ function convert (source, options) {
     let registerNode;
     let serviceRegisterNode;
     let mainRegisterModulesNode;
+
+    const myCopyright = /(?:©|\(c\)|copyright\b)\s*(\d{4})(?:-(\d{4}))?/;
+    const copyrightMatch = source.match(myCopyright);
+    if(copyrightMatch) {
+      console.log('CCCCCCC', copyrightMatch[0]);
+      const newCopyright =
+        '(c) ' + copyrightMatch[1] + '-' + new Date().getFullYear();
+      source = source.replace(copyrightMatch[0], newCopyright);
+    }
 
     var result = falafel(source, {
         parser: acorn,
@@ -68,15 +77,8 @@ function convert (source, options) {
         if(node.type === 'Literal' && node.parent.type === 'CallExpression' &&
           node.parent.callee.object &&
           node.parent.callee.object.name === 'requirejs') {
-          // remove requireJs.toUrl
-          // console.log('ZZZZZZZzz', node.parent);
-          console.log('RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR');
           node.parent.update(node.raw);
         }
-        // if(serviceRegisterNode && node.type === 'BlockStatement') {
-        //   console.log('NNNNNN', node.parent.source());
-        //   console.log('__________________');
-        // }
 
         if (isNamedDefine(node)) {
             throw new Error('Found a named define - this is not supported.');
@@ -215,9 +217,6 @@ function convert (source, options) {
           brace_style: 'collapse, preserve-inline'
         };
         moduleCode = beautify(moduleCode, opts);
-
-        // jsbeautify doesn't understand es6 module syntax yet
-        // moduleCode = moduleCode.replace(/export[\s\S]default[\s\S]/, 'export default ');
     }
 
     // update the node with the new es6 code
