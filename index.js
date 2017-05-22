@@ -25,6 +25,7 @@ function convert (source, options) {
     var mainCallExpression = null;
     let componentDefinition;
     let registerNode;
+    let serviceRegisterNode;
     let mainRegisterModulesNode;
 
     var result = falafel(source, {
@@ -54,11 +55,26 @@ function convert (source, options) {
           // capture source of component definition
           componentDefinition = 'export default ' + node.source() + ';';
         }
-        if (node.name === 'register' &&
+        // record the `register` function node
+        if(node.name === 'register' &&
           node.parent.type === 'FunctionDeclaration') {
-          // record the `register` function node
-          registerNode = node.parent;
+          const ns = node.parent.source();
+          if(ns.includes('module.service') || ns.includes('module.directive')) {
+            serviceRegisterNode = node.parent;
+          } else {
+            registerNode = node.parent;
+          }
         }
+        if(node.name === 'factory' &&
+          node.type === 'Identifier' &&
+          node.parent.type === 'FunctionDeclaration') {
+          node.parent.update(node.parent.source()
+            .replace(/^function/, 'export default function'));
+        }
+        // if(serviceRegisterNode && node.type === 'BlockStatement') {
+        //   console.log('NNNNNN', node.parent.source());
+        //   console.log('__________________');
+        // }
 
         if (isNamedDefine(node)) {
             throw new Error('Found a named define - this is not supported.');
@@ -175,6 +191,9 @@ function convert (source, options) {
     if(registerNode) {
       registerNode.update(componentDefinition);
     }
+    if(serviceRegisterNode) {
+      serviceRegisterNode.update('');
+    };
 
     // add modules code
     moduleCode += getModuleCode(moduleFunc);
