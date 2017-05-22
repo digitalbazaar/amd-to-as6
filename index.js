@@ -24,6 +24,7 @@ function convert (source, options) {
     var requiresWithSideEffects = [];
     var mainCallExpression = null;
     let componentDefinition;
+    let factoryNode;
     let registerNode;
     let serviceRegisterNode;
     let mainRegisterModulesNode;
@@ -42,12 +43,6 @@ function convert (source, options) {
           === 'forEach') {
           mainRegisterModulesNode =
             node.parent.parent.parent.parent.parent.parent;
-        }
-        if(node.type === 'Literal' && node.parent.type === 'CallExpression' &&
-          node.parent.callee.object &&
-          node.parent.callee.object.name === 'requirejs') {
-          // remove requireJs.toUrl
-          node.parent.update(node.raw);
         }
         if(node.type === 'ObjectExpression' &&
           node.parent.type === 'CallExpression' &&
@@ -68,8 +63,15 @@ function convert (source, options) {
         if(node.name === 'factory' &&
           node.type === 'Identifier' &&
           node.parent.type === 'FunctionDeclaration') {
-          node.parent.update(node.parent.source()
-            .replace(/^function/, 'export default function'));
+          factoryNode = node.parent;
+        }
+        if(node.type === 'Literal' && node.parent.type === 'CallExpression' &&
+          node.parent.callee.object &&
+          node.parent.callee.object.name === 'requirejs') {
+          // remove requireJs.toUrl
+          // console.log('ZZZZZZZzz', node.parent);
+          console.log('RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR');
+          node.parent.update(node.raw);
         }
         // if(serviceRegisterNode && node.type === 'BlockStatement') {
         //   console.log('NNNNNN', node.parent.source());
@@ -193,7 +195,11 @@ function convert (source, options) {
     }
     if(serviceRegisterNode) {
       serviceRegisterNode.update('');
-    };
+    }
+    if(factoryNode) {
+      factoryNode.update(factoryNode.source()
+        .replace(/^function/, 'export default function'));
+    }
 
     // add modules code
     moduleCode += getModuleCode(moduleFunc);
