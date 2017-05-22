@@ -33,8 +33,11 @@ function convert (source, options) {
     const myCopyright = /(?:©|\(c\)|copyright\b)\s*(\d{4})(?:-(\d{4}))?/;
     const copyrightMatch = source.match(myCopyright);
     if(copyrightMatch) {
-      const newCopyright =
-        '(c) ' + copyrightMatch[1] + '-' + new Date().getFullYear();
+      const currentYear = new Date().getFullYear();
+      let newCopyright = '(c) ' + copyrightMatch[1];
+      if(copyrightMatch[1] < currentYear) {
+        newCopyright += '-' + currentYear;
+      }
       source = source.replace(copyrightMatch[0], newCopyright);
     }
 
@@ -54,7 +57,7 @@ function convert (source, options) {
             node.parent.parent.parent.parent.parent.parent;
         }
         if(node.type === 'ObjectExpression' &&
-          node.parent.type === 'CallExpression' &&
+          node.parent.type === 'CallExpression' && node.parent.callee.object &&
           node.parent.callee.object.name === 'module') {
           // capture source of component definition
           componentDefinition = 'export default ' + node.source() + ';';
