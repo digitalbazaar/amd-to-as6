@@ -204,7 +204,8 @@ function convert (source, options) {
           throw new Error('Unknown component type!');
         }
         moduleRegistration +=
-          'module.' + type + '(\'br' + comp + '\', ' + comp + ');\n';
+          'module.' + type + '(\'' + brComponent(comp, type) +
+          '\', ' + comp + ');\n';
       });
       mainRegisterModulesNode.update(moduleRegistration);
     }
@@ -244,6 +245,18 @@ function convert (source, options) {
 
 function camelCase(text) {
   return _.chain(text).camelCase().upperFirst().value();
+}
+
+function brComponent(compName, type) {
+  if(['service', 'filter'].includes(type)) {
+    return 'br' + compName;
+  }
+  const lowerCompName = compName.toLowerCase();
+  const i = lowerCompName.indexOf(type);
+  if(i === -1) {
+    throw new Error('Invalid Component Name.');
+  }
+  return 'br' + compName.substring(0, i);
 }
 
 /**
