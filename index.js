@@ -135,7 +135,7 @@ function convert (source, options) {
         });
 
         extend(dependenciesMap, modulePaths.reduce(function (obj, path, index) {
-            obj[path] = importNames[index] || null;
+            obj[path] = camelCase(importNames[index]) || null;
             return obj;
         }, {}));
     }
@@ -225,6 +225,10 @@ function convert (source, options) {
     return result.toString();
 }
 
+function camelCase(text) {
+  return _.chain(text).camelCase().upperFirst().value();
+}
+
 /**
  * Takes an object where the keys are module paths and the values are
  * the import names and returns the import statements as a string.
@@ -241,7 +245,7 @@ function getImportStatements (dependencies) {
         // }
         // always create import name
         if (!dependencies[key]) {
-            const componentName = _.chain(key).camelCase().upperFirst().value();
+            const componentName = camelCase(key);
             components.push(componentName);
             statements.push('import ' + componentName + ' from ' + key + ';');
         }
