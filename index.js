@@ -148,7 +148,8 @@ function convert (source, options) {
 
         extend(dependenciesMap, modulePaths.reduce(function (obj, path, index) {
             if(importNames[index] &&
-              importNames[index].match(/Directive|Component|Filter|Service/)) {
+              importNames[index]
+                .match(/Component|Controller|Directive|Filter|Service/)) {
                 obj[path] = camelCase(importNames[index]);
             } else {
               obj[path] = importNames[index] || null;
@@ -195,7 +196,9 @@ function convert (source, options) {
       components.forEach(comp => {
         const c = comp.toLowerCase();
         let type;
-        ['component', 'directive', 'service', 'filter'].forEach(t => {
+        [
+          'component', 'controller', 'directive', 'service', 'filter'
+        ].forEach(t => {
           if(c.includes(t)) {
             type = t;
           }
@@ -251,12 +254,21 @@ function brComponent(compName, type) {
   if(['service', 'filter'].includes(type)) {
     return 'br' + compName;
   }
+  if(type === 'controller') {
+    return _.camelCase(compName);
+  }
   const lowerCompName = compName.toLowerCase();
   const i = lowerCompName.indexOf(type);
   if(i === -1) {
     throw new Error('Invalid Component Name.');
   }
   return 'br' + compName.substring(0, i);
+}
+
+function isBedrockComponent(compName) {
+  const lowerCompName = compName.toLowerCase();
+  return ['component', 'controller', 'directive', 'filter', 'service']
+    .some(type => lowerCompName.endsWith(type, lowerCompName.length - 1));
 }
 
 /**
@@ -275,9 +287,13 @@ function getImportStatements (dependencies) {
         // }
         // always create import name
         if (!dependencies[key]) {
-            const componentName = camelCase(key);
-            components.push(componentName);
-            statements.push('import ' + componentName + ' from ' + key + ';');
+            if(isBedrockComponent(key)) {
+              const componentName = camelCase(key);
+              components.push(componentName);
+              statements.push('import ' + componentName + ' from ' + key + ';');
+            } else {
+              statements.push('import ' + key + ';');
+            }
         }
         else {
             statements.push('import ' + dependencies[key] +
