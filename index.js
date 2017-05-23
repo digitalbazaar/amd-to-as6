@@ -88,8 +88,9 @@ function convert (source, options) {
           node.parent.callee.object.name === 'module') {
           const componentName = camelCase(node.name);
           const componentType = node.parent.source().match(/module\.(.*)\(/)[1];
-          node.parent.parent.update('module.' + componentType + '(\'br' +
-            componentName + '\', ' + componentName + ');');
+          node.parent.parent.update('module.' + componentType + '(\'' +
+            brComponent(componentName, componentType) + '\', ' +
+            componentName + ');');
         }
 
         if (isNamedDefine(node)) {
